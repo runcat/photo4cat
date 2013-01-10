@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				width="560"
+				height="400"
+				creationComplete="init();" backgroundColor="#C8C8C8">
+	<mx:Style source="css/style00/a.css"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import action.ScaleBox;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.ItemClickEvent;
+			import mx.graphics.codec.JPEGEncoder;
+			import mx.managers.CursorManager;
+			
+			private var imageReference:FileReference=new FileReference();
+			private var bitmapData:BitmapData;
+			private var imageLoader:Loader=new Loader();
+			private static const WIDTH:Number = 367;//347;
+			private static const HEIGHT:Number = 388;//361;
+			private var box:ScaleBox=new ScaleBox();
+			public static const LINE_WIDTH:Number=1;
+			private var uploadURL:String;
+			private var photoURL:String;
+			private var flag:Boolean = false;
+			private function initMenu():void {
+				var nodayMenu:ContextMenuItem = new ContextMenuItem("头像编辑器 V1.0 版权所有 ");
+				nodayMenu.enabled = false;
+				var MyMenu:ContextMenu = new ContextMenu();
+				MyMenu.hideBuiltInItems();
+				MyMenu.customItems.push(nodayMenu);
+				this.contextMenu = MyMenu;
+			}
+			private function init():void {
+				initMenu();
+				var postURL:String=Application.application.parameters.url;
+				Alert.show("postURL"+postURL);
+				if (postURL) {
+					uploadURL = postURL;
+				} else {
+					uploadURL = ExternalInterface.call("getPostURL");
+				Alert.show("uploadURL"+uploadURL);
+				}
+				var photo:String = Application.application.parameters.photo;
+				Alert.show("photo"+photo);
+				if(photo) {
+					photoURL = photo;
+				} else {
+					photoURL = ExternalInterface.call("getPhotoURL");
+				Alert.show("photoURL"+photoURL);
+				}
+				if(uploadURL==null || photoURL==null) {
+					var msg:SystemMsg;
+					msg = SystemMsg(PopUpManager.createPopUp(this,SystemMsg, true));
+					msg.message.text = "温馨提示：头像编辑器配置错误，请与管理员联系！";
+					PopUpManager.centerPopUp(msg);
+				}
+				showUserPhoto();
+				toggleBtnBar.selectedIndex = 1;
+			}
+			private function showUserPhoto():void {
+				savePicBtn.enabled=false;
+				imgCanvas.removeEventListener(MouseEvent.MOUSE_MOVE, showImg);
+				show1.source = "../"+photoURL;
+			}
+			private function showShotPhoto():void {
+				show1.source = null;
+				if(flag){
+					imgCanvas.addEventListener(MouseEvent.MOUSE_MOVE, showImg);
+					showImg(new MouseEvent(MouseEvent.MOUSE_MOVE));
+				}
+			}
+			private function toggleBarClick(e:ItemClickEvent):void {
+				if(e.index==0){
+					showShotPhoto();
+				} else if(e.index==1) {
+					showUserPhoto();
+				}
+			}
+			private function loaderror():void {
+			 	show1.source = "userDefault_160.png"
+			}
+
+			private function browseImage():void {
+				var imageFilter:FileFilter=new FileFilter("图片文件(*.jpeg;*.jpg;*.png;*.gif)", "*.jpeg;*.jpg;*.png;*.gif");
+				imageReference.addEventListener(Event.SELECT, imageSelectedHandler);
+				imageReference.browse([imageFilter]);
+			}
+			private function goto2():void {
+				vs.selectedChild = interface2;
+				initCamera();
+			}
+
+			private function imageSelectedHandler(e:Event):void {
+				imageReference.addEventListener(Event.COMPLETE, imageCompleteHandler);
+				imageReference.load();
+			}
+
+			private function imageCompleteHandler(e:Event):void {
+				imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, imageLoaderCompleteHandler);
+				imageLoader.loadBytes(imageReference.data);
+			}
+
+			private function imageLoaderCompleteHandler(e:Event):void {
+				var imageBitmap:Bitmap=Bitmap(imageLoader.content);
+				showImage(imageBitmap);
+			}
+			private var bl:Number;
+
+			private function showImage(imageBitmap:Bitmap):void {
+				flag = true;
+				toggleBtnBar.selectedIndex = 0;
+				savePicBtn.enabled=true;
+				var bH:int=imageBitmap.height;
+				var bW:int=imageBitmap.width;
+				var hRatio:Number=bH / HEIGHT;
+				var wRatio:Number=bW / WIDTH;
+				if (bW > WIDTH || bH > HEIGHT) {
+					if (wRatio > hRatio) {
+						bl=wRatio;
+						resizeCanvasAndBox(bW / wRatio, bH / wRatio);
+					} else {
+						bl=hRatio;
+						resizeCanvasAndBox(bW / hRatio, bH / hRatio);
+					}
+				} else {
+					bl=1;
+					resizeCanvasAndBox(bW, bH);
+				}
+				bitmapData=imageBitmap.bitmapData;
+				img.source=imageBitmap;
+				imgCanvas.addChild(box);
+				imgCanvas.addEventListener(MouseEvent.MOUSE_MOVE, showImg);
+				showImg(new MouseEvent(MouseEvent.MOUSE_MOVE));
+			}
+
+			private function resizeCanvasAndBox(w:Number, h:Number):void
+			{
+				img.width=w;
+				img.height=h;
+				imgCanvas.width=w;
+				imgCanvas.height=h;
+				if (w < h)
+				{
+					box.boxWidth=box.boxHeight=w < 99 ? w-1 : 100;
+				}
+				else
+				{
+					box.boxWidth=box.boxHeight=h < 99 ? h-1 : 100;
+				}
+				box.x=0;
+				box.y=0;
+			}
+			private var bitmapupload:Bitmap;
+
+			private function showImg(e:MouseEvent):void {
+				var rect:Rectangle=new Rectangle((box.x + LINE_WIDTH) * bl, (box.y + LINE_WIDTH) * bl, (box.boxWidth - LINE_WIDTH) * bl, (box.boxHeight - LINE_WIDTH) * bl);
+				var bitmapDataTemp:BitmapData=copy(bitmapData, rect)
+				bitmapupload=new Bitmap(bitmapDataTemp);
+				show1.source=bitmapupload;
+				savePicBtn.enabled=true;
+			}
+
+			private function copy(target:BitmapData, rect:Rectangle):BitmapData
+			{
+				var bitmapData:BitmapData=new BitmapData(rect.width, rect.height);
+				bitmapData.copyPixels(target, rect, new Point(0, 0));
+				return bitmapData;
+			}
+
+			public function savePic():void {
+				if (bitmapupload) {
+					savePicBtn.enabled=false;
+					var url:String="./PhotoUploadPo";
+					if (uploadURL != null) {
+						url="./" + uploadURL;
+					}
+					var request:URLRequest=new URLRequest(url);
+					request.method=URLRequestMethod.POST;
+					request.contentType="application/octet-stream";
+					request.data=new JPEGEncoder(100).encode(bitmapupload.bitmapData);
+					var loader:URLLoader=new URLLoader();
+					CursorManager.setBusyCursor();
+					loader.addEventListener(Event.COMPLETE, succHandle);
+					loader.addEventListener(IOErrorEvent.IO_ERROR, errorHandle);
+					loader.load(request);
+				} else {
+					Alert.show("你还没选择图片", "提示");
+				}
+			}
+
+			private function errorHandle(e:IOErrorEvent):void
+			{
+				savePicBtn.enabled=true;
+				CursorManager.removeBusyCursor();
+				Alert.show("服务器连接失败！请与管理员联系", "提示");
+			}
+
+			private function succHandle(e:Event):void
+			{
+				CursorManager.removeBusyCursor();
+				Alert.show("保存成功", "提示");
+				savePicBtn.enabled=true;
+			}
+
+			private var m_camera:Camera; //定义一个摄像头
+			private var m_localVideo:Video; //定义一个本地视频
+			private var m_pictureBitmapData:BitmapData; //定义视频截图
+
+			//初始化摄像头
+			private var CAMERAWIDTH:int = 400;
+			private var CAMERAHEIGHT:int = 300;
+			private function initCamera():void {
+				if(m_camera==null){
+					m_camera=Camera.getCamera();
+					if (m_camera != null) {
+						m_camera.addEventListener(StatusEvent.STATUS, _onCameraStatusHandler);
+						m_camera.setMode(CAMERAWIDTH, CAMERAHEIGHT, 50);
+						m_camera.setQuality(0,100);
+						m_localVideo=new Video();
+						m_localVideo.width=CAMERAWIDTH;
+						m_localVideo.height=CAMERAHEIGHT;
+						m_localVideo.attachCamera(m_camera);
+						display.addChild(m_localVideo);
+						shot.enabled=true;
+					} else {
+						shot.enabled=false;
+						Alert.show("没有找到摄像头，是否重新查找？", "提示", Alert.OK | Alert.NO, this, _initCamera);
+						return;
+					}
+				}
+			}
+
+			//检测摄像头权限事件
+			private function _onCameraStatusHandler(event:StatusEvent):void {
+				if (!m_camera.muted) {
+				} else {
+					Alert.show("无法链接到活动摄像头，是否重新检测？", "提示", Alert.OK | Alert.NO, this, _initCamera);
+				}
+				shot.enabled=true;
+				m_camera.removeEventListener(StatusEvent.STATUS, _onCameraStatusHandler);
+			}
+
+			//当摄像头不存在，或连接不正常时重新获取
+			private function _initCamera(event:CloseEvent):void {
+				if (event.detail == Alert.OK) {
+					initCamera();
+				} else {
+					backPicture();
+				}
+			}
+
+			//拍照按钮事件，进行视频截图
+			private function snapshotPicture():void {
+				m_pictureBitmapData=new BitmapData(CAMERAWIDTH, CAMERAHEIGHT);
+				m_pictureBitmapData.draw(display, new Matrix());
+				showsnapshot(m_pictureBitmapData);
+			}
+
+			private function showsnapshot(bitmapd:BitmapData):void
+			{
+				bitmapData=bitmapd;
+				var bm:Bitmap=new Bitmap(bitmapd);
+				showImage(bm);
+				vs.selectedChild = interface1;
+				savePicBtn.enabled = true;
+			}
+			private function backPicture():void {
+				vs.selectedChild = interface1;
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox top="1" bottom="1" right="1" left="1">
+		<mx:ViewStack id="vs" width="100%" height="100%" creationPolicy="all" borderStyle="none" backgroundColor="#FFFFFF">
+			<mx:HBox label="上传" horizontalGap="1" id="interface1" width="100%" height="100%">
+				<mx:VBox width="100%"
+						 height="100%"
+						 horizontalAlign="center"
+						 verticalAlign="middle">
+					<mx:Canvas id="imgCanvas"
+							   width="100%"
+							   height="100%" backgroundColor="#FFFFFF">
+						<mx:Image id="img">
+						</mx:Image>
+					</mx:Canvas>
+				</mx:VBox>
+				<mx:VBox width="180"
+						 height="398"
+						 horizontalAlign="center"
+						 backgroundColor="#FFFFFF" fontSize="12" paddingTop="8">
+					<mx:Canvas width="162" height="162" backgroundColor="#E6E6E6">
+						<mx:Image width="160" height="160" id="show1" ioError="loaderror()" horizontalCenter="0" verticalCenter="0"/>
+					</mx:Canvas>
+					<mx:HBox paddingBottom="25">
+					<mx:ToggleButtonBar id="toggleBtnBar" itemClick="toggleBarClick(event)">
+						<mx:dataProvider>
+							<mx:String>截图预览</mx:String>
+							<mx:String>当前头像</mx:String>
+						</mx:dataProvider>
+					</mx:ToggleButtonBar>
+					</mx:HBox>
+					<mx:VBox horizontalAlign="center">
+						<mx:HBox width="100%" >
+							<mx:Button label="上传"
+									   click="browseImage();"/>
+							<mx:Label text="或" />
+							<mx:Button label="拍摄"
+									   click="goto2();" fontWeight="normal" cornerRadius="0"/>
+						</mx:HBox>
+						<mx:Label width="100%" textAlign="center" text="↓" />
+						<mx:HBox width="100%" borderStyle="solid">
+							
+						<mx:Label width="100%" text="拖动、缩放"  textAlign="center" fontWeight="normal" color="#868686"/>
+						</mx:HBox>
+						<mx:Label width="100%" textAlign="center"  text="↓" />
+						<mx:HBox width="100%" >
+						<mx:Button id="savePicBtn" width="100%"
+								   label="保存头像"
+								   click="savePic()" fontWeight="normal" cornerRadius="0"/>
+						</mx:HBox>
+					</mx:VBox>
+				</mx:VBox>
+			</mx:HBox>
+			<mx:HBox label="拍摄"
+					 id="interface2"
+					  horizontalGap="1"
+					 width="100%"
+					 height="100%" paddingBottom="10" paddingLeft="10" paddingTop="10" paddingRight="10">
+				<mx:Canvas id="video"
+						   width="100%"
+						   height="100%"
+						   verticalScrollPolicy="off">
+					<mx:VideoDisplay id="display" width="400" height="300" backgroundColor="#EBEAEA" horizontalCenter="0" verticalCenter="0"/>
+				</mx:Canvas>
+				<mx:VBox width="120"
+						 height="100%" verticalAlign="bottom" paddingBottom="40" horizontalAlign="center">
+					<mx:HBox >
+					<mx:Button fontWeight="normal" id="shot" label="拍摄" click="snapshotPicture()" height="80" width="80" fontSize="14"  cornerRadius="0"/>
+					</mx:HBox>
+					<mx:HBox >
+					<mx:Button fontWeight="normal" id="back" label="返回" click="backPicture()" height="25" width="80" fontSize="12"  cornerRadius="0"/>
+					</mx:HBox>
+				</mx:VBox>
+			</mx:HBox>
+		</mx:ViewStack>
+	</mx:VBox>
+</mx:Application>

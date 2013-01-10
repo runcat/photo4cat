@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalAlign="center" verticalAlign="middle" fontSize="14" backgroundColor="#000000" color="#FFFFFF">
+		<mx:Label id="message" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" />
+</mx:HBox>

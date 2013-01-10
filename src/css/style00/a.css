@@ -1,0 +1,77 @@
+Button
+{
+   color: #333333;
+   textRollOverColor: #333333;
+   textSelectedColor: #333333;
+   borderColor: #999999;
+   themeColor: #009DFF;
+   fontSize: 12;
+   fontFamily:"宋体";
+   fontWeight:"normal";
+	paddingLeft: 8;
+	paddingRight: 8;
+	paddingTop: 0;
+	paddingBottom: 0;
+
+	disabledSkin: Embed(source="default/Button_disabledSkin.png",scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	downSkin: Embed(source="default/Button_downSkin.png",scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	overSkin: Embed(source="default/Button_overSkin.png",scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	upSkin: Embed(source="default/Button_upSkin.png",scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	selectedDisabledSkin: Embed(source="default/Button_disabledSkin.png", scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	selectedUpSkin: Embed(source="default/Button_downSkin.png", scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	selectedOverSkin: Embed(source="default/Button_overSkin.png", scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+	selectedDownSkin: Embed(source="default/Button_downSkin.png", scaleGridLeft="4", scaleGridTop="4", scaleGridRight="60", scaleGridBottom="18");
+}
+ToolTip
+{
+	fontSize: 12;
+	color: #FFFFFF;
+	borderSkin: Embed(source="Snap2.png",scaleGridLeft="40", scaleGridTop="20", scaleGridRight="60", scaleGridBottom="25");
+	paddingLeft: 10;
+	paddingRight: 10;
+	paddingTop:3;
+	borderStyle: none;
+	textAlign: center;
+}
+Alert
+
+{
+	backgroundAlpha: 1.0;
+	backgroundColor: #FFFFFF;
+	borderAlpha: 0.5;
+	borderColor: #7f7f7f;
+	borderThickness: 6;
+	borderStyle: solid;	
+	borderSides: "top left right bottom";
+	cornerRadius: 5;
+	fontSize: 12;
+    fontFamily:"宋体";
+    fontWeight:"normal";
+	color:#000000;
+	dropShadowEnabled: false;
+	headerHeight: 34;
+	statusStyleName: alertStatus;
+	controlBarStyleName: alertControlBar;
+	paddingLeft: 60;
+	paddingRight: 60;
+	paddingTop:0;
+	paddingBottom:5;
+	buttonStyleName: darkButton;
+	titleStyleName: alertTitle;
+	backgroundImage: Embed(source="alertBack.png", scaleGridTop="1", scaleGridLeft="1", scaleGridRight="331", scaleGridBottom="65");
+	backgroundSize: "100%";
+	borderThicknessTop: 0;
+	borderThicknessBottom: 0;
+	borderThicknessLeft: 0;
+	borderThicknessRight: 0;
+	titleBackgroundSkin: Embed(source="windowTitle.png", scaleGridTop="1", scaleGridLeft="1", scaleGridRight="331", scaleGridBottom="28");
+	modalTransparency: 0;
+	
+}
+
+.alertTitle
+{
+    fontWeight: bold;
+    paddingLeft: 10;
+    color:#254589;
+}
